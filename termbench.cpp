@@ -377,9 +377,18 @@ int main(int ArgCount, char **Args)
 
         DWORD WinConMode = 0;
         DWORD EnableVirtualTerminalProcessing = 0x0004;
+        DWORD EnableWrapAtEolOutput = 0x0002;
+
+        // ENABLE_ECHO_INPUT and ENABLE_LINE_INPUT are input-handle flags.
+        // Clearing them on an output handle clears whatever shares their bit
+        // values there, and 0x0002 is ENABLE_WRAP_AT_EOL_OUTPUT. With autowrap
+        // off, LongLine emits no newlines and so overwrites the last cell for a
+        // gigabyte instead of wrapping, measuring nothing. Keep the inherited
+        // mode and add only what this program needs.
         VirtualTerminalSupport = (GetConsoleMode(TerminalOut, &WinConMode) &&
-                                  SetConsoleMode(TerminalOut, (WinConMode & ~(ENABLE_ECHO_INPUT|ENABLE_LINE_INPUT)) |
-                                                 EnableVirtualTerminalProcessing));
+                                  SetConsoleMode(TerminalOut, WinConMode |
+                                                 EnableVirtualTerminalProcessing |
+                                                 EnableWrapAtEolOutput));
     }
 #else
     int OutputHandle = STDOUT_FILENO;
