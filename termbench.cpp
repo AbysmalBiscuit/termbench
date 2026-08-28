@@ -303,6 +303,7 @@ int main(int ArgCount, char **Args)
     int BypassConhost = USE_FAST_PIPE_IF_AVAILABLE();
     int VirtualTerminalSupport = 0;
     int TestSize = TestSize_Normal;
+    char *OutPath = 0;
 
     for(int ArgIndex = 1; ArgIndex < ArgCount; ++ArgIndex)
     {
@@ -318,6 +319,10 @@ int main(int ArgCount, char **Args)
         else if(strcmp(Arg, "large") == 0)
         {
             TestSize = TestSize_Large;
+        }
+        else if(strcmp(Arg, "-out") == 0 && (ArgIndex + 1) < ArgCount)
+        {
+            OutPath = Args[++ArgIndex];
         }
         else
         {
@@ -461,4 +466,24 @@ int main(int ArgCount, char **Args)
     AppendString(&Frame, "gb/s)\n");
 
     RawFlushBuffer(OutputHandle, &Frame);
+
+    /* Results also go to a file when asked, because stdout has to stay attached
+       to the terminal being measured: redirecting it measures a pipe. */
+    if(OutPath)
+    {
+        FILE *ResultFile = fopen(OutPath, "w");
+        if(ResultFile)
+        {
+            for(int TestIndex = 0; TestIndex < ArrayCount(Tests); ++TestIndex)
+            {
+                test Test = Tests[TestIndex];
+                test_context Context = Contexts[TestIndex];
+                fprintf(ResultFile, "%s\t%.6f\t%llu\t%.6f\n", Test.Name,
+                        Context.SecondsElapsed,
+                        (unsigned long long)Context.TotalWriteCount,
+                        GetGBS((double)Context.TotalWriteCount, Context.SecondsElapsed));
+            }
+            fclose(ResultFile);
+        }
+    }
 }
