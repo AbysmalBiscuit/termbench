@@ -3,7 +3,7 @@
 # binaries -- only steady across the run.
 #
 #   gpu_timing   the report line is the whole instrument
-#   gpu_deco_ab  flips the gate every report window and names the arm
+#   gpu_ab       flips one skip every report window and names the arm
 #   vsync off    a frame cap would hide a few microseconds of GPU time
 #   ipc_socket   off, so this window never answers the live instance's CLI
 [ui]
@@ -31,4 +31,4 @@ args = [
 
 [debug]
 gpu_timing = true
-gpu_deco_ab = true
+gpu_ab = "backgrounds"

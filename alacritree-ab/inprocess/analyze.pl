@@ -1,18 +1,21 @@
 #!/usr/bin/perl
-# Pairs each [deco gated] report window with the [deco always] window beside
-# it. The arms alternate strictly, so adjacent lines are a pair that met the
-# same driver, the same grid and the same second -- which is the whole reason
-# to run the comparison inside one process instead of across two launches.
+# Pairs each [<what> gated] report window with the [<what> always] window
+# beside it. The arms alternate strictly, so adjacent lines are a pair that met
+# the same driver, the same grid and the same second -- which is the whole
+# reason to run the comparison inside one process instead of across two
+# launches.
 #
-# backgrounds and glyphs are identical work under both arms, so their ratio is
-# the noise floor this machine imposes. Any claim about `total` has to clear it.
+# The stages the experiment does not touch are identical work under both arms,
+# so their ratio is the noise floor this machine imposes. Any claim about
+# `total` has to clear it.
 use strict;
 use warnings;
 
-my (@g, @a);
+my (@g, @a, $what);
 while (<>) {
-    next unless /gpu grid \[deco (gated|always)\], (\d+) frames: submit ([\d.]+)us/;
-    my ($arm, $frames) = ($1, $2);
+    next unless /gpu grid \[(deco|bg) (gated|always)\], (\d+) frames: submit ([\d.]+)us/;
+    my ($subject, $arm, $frames) = ($1, $2, $3);
+    $what //= $subject;
     my ($skipped) = /skipped (\d+)\//;
     my ($total)   = /total ([\d.]+)us/;
     my ($bg)      = /backgrounds ([\d.]+)us/;
@@ -20,7 +23,7 @@ while (<>) {
     my ($deco)    = /decorations ([\d.]+)us/;
     next unless defined $total;
     my $r = { frames => $frames, skipped => $skipped // 0, total => $total,
-              bg => $bg // 0, gl => $gl // 0, deco => $deco };
+              bg => $bg, gl => $gl, deco => $deco };
     $arm eq 'gated' ? push @g, $r : push @a, $r;
 }
 
@@ -73,19 +76,33 @@ sub row {
            median(@ratio), sign_p($below, scalar @moved), $note // '';
 }
 
-printf "%d pairs\n\n", $n;
+$what //= 'deco';
+# The control is every stage the experiment leaves alone.  Summing the stage
+# under test into it would put the effect inside its own baseline.
+my %control = (
+    deco => ['backgrounds + glyphs', sub { ($_[0]{bg} // 0) + ($_[0]{gl} // 0) }],
+    bg   => ['glyphs + decorations', sub { ($_[0]{gl} // 0) + ($_[0]{deco} // 0) }],
+);
+my ($control_label, $control_pick) = @{ $control{$what} };
+
+printf "%d pairs, flipping %s\n\n", $n, $what eq 'bg' ? 'the background quad' : 'the decoration pass';
 printf "%-32s %9s %9s %8s %7s\n", 'measurement', 'gated', 'always', 'ratio', 'p';
-row('total GPU per frame',    sub { $_[0]{total} });
-row('backgrounds + glyphs',   sub { $_[0]{bg} + $_[0]{gl} }, '<- null control, same work');
-row('decorations',            sub { $_[0]{deco} });
+row('total GPU per frame', sub { $_[0]{total} });
+row($control_label, $control_pick, '<- null control, same work');
+row('backgrounds', sub { $_[0]{bg} });
+row('decorations', sub { $_[0]{deco} });
 
 my @saved = map { $a[$_]{total} - $g[$_]{total} } 0 .. $n - 1;
 printf "\nsaved per frame (median):  %.0fus\n", median(@saved);
 
-my $fired = grep { $_->{skipped} == $_->{frames} } @g;
-my $partial = grep { $_->{skipped} > 0 && $_->{skipped} < $_->{frames} } @g;
-my $drew = grep { $_->{skipped} == 0 } @g;
-printf "gated windows: %d skipped every frame, %d drew every frame, %d mixed\n",
-       $fired, $drew, $partial;
-my $leak = grep { defined $_->{deco} && $_->{skipped} == $_->{frames} } @g;
-printf "gated windows that skipped yet reported a decoration time: %d\n", $leak;
+# Only the decoration experiment can drop its whole draw; the background
+# collapse happens in the vertex shader, where no counter on this side sees it.
+if ($what eq 'deco') {
+    my $fired = grep { $_->{skipped} == $_->{frames} } @g;
+    my $partial = grep { $_->{skipped} > 0 && $_->{skipped} < $_->{frames} } @g;
+    my $drew = grep { $_->{skipped} == 0 } @g;
+    printf "gated windows: %d skipped every frame, %d drew every frame, %d mixed\n",
+           $fired, $drew, $partial;
+    my $leak = grep { defined $_->{deco} && $_->{skipped} == $_->{frames} } @g;
+    printf "gated windows that skipped yet reported a decoration time: %d\n", $leak;
+}

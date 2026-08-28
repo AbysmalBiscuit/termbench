@@ -1,12 +1,12 @@
 # Drives one phase of the decoration-gate A/B inside a live window.
 #
-# ALACRITREE_DECOAB_MODE picks the sgrtest workload: `plain` leaves the grid
+# ALACRITREE_AB_MODE picks the sgrtest workload: `plain` leaves the grid
 # undecorated, so the gated arm skips the pass and the always arm draws it;
 # `underline` decorates every cell, where both arms draw and the pair is a
 # null control on the instrument itself.
 $here = $PSScriptRoot
 $bench = Split-Path -Parent (Split-Path -Parent $here)
-$mode = $env:ALACRITREE_DECOAB_MODE
+$mode = $env:ALACRITREE_AB_MODE
 if (-not $mode) { $mode = 'plain' }
 New-Item -ItemType Directory -Force -Path "$here/out" | Out-Null
 

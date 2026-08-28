@@ -3,7 +3,8 @@
 # prints the gpu grid report lines.
 param(
   [Parameter(Mandatory = $true)][string]$Binary,
-  [ValidateSet('plain', 'underline')][string]$Mode = 'plain',
+  [ValidateSet('decorations', 'backgrounds')][string]$Ab = 'decorations',
+  [ValidateSet('plain', 'percell', 'percellbg', 'underline')][string]$Mode = 'plain',
   [int]$Seconds = 300
 )
 
@@ -17,11 +18,18 @@ foreach ($dep in @('conpty.dll', 'OpenConsole.exe')) {
 
 $env:APPDATA = Join-Path $here 'appdata'
 $env:LOCALAPPDATA = Join-Path $here 'local'
-$env:ALACRITREE_DECOAB_MODE = $Mode
+$env:ALACRITREE_AB_MODE = $Mode
+
+# One config serves both experiments, and the arm it flips is the only thing
+# that differs between them, so the driver sets it rather than the caller
+# editing a file it would then have to remember to put back.
+$config = Join-Path $here 'appdata/alacritty/alacritree.toml'
+$patched = (Get-Content -LiteralPath $config -Raw) -replace 'gpu_ab = "[a-z]+"', ('gpu_ab = "' + $Ab + '"')
+Set-Content -LiteralPath $config -Value $patched -NoNewline
 
 Remove-Item -Recurse -Force (Join-Path $here 'local/alacritree') -ErrorAction SilentlyContinue
 $p = Start-Process -FilePath $exe -PassThru
-Write-Host "${Mode}: pid $($p.Id), running ${Seconds}s"
+Write-Host "$Ab/$Mode : pid $($p.Id), running ${Seconds}s"
 Start-Sleep -Seconds $Seconds
 if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
 $p.WaitForExit(5000) | Out-Null

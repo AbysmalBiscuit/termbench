@@ -1,7 +1,7 @@
 # Decoration gate, first measured run
 
-Snapshot. Regenerate with `perl ../analyze.pl plain-report.txt` and
-`perl ../analyze.pl underline-report.txt`; both reports in this directory are
+Snapshot. Regenerate with `perl ../analyze.pl deco-plain-report.txt` and
+`perl ../analyze.pl deco-underline-report.txt`; both `deco-*-report.txt` files here are
 the raw input, so the tables below are reproducible from what is committed.
 
 Machine: Windows 11, grid 178x63, vsync off, release build.
