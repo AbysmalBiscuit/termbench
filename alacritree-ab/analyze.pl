@@ -108,7 +108,9 @@ for my $tag (@complete) {
     }
 }
 my ($modal) = sort { $grid_count{$b} <=> $grid_count{$a} } keys %grid_count;
-for my $tag (@complete) {
+# A run predating the grid sidecar records none at all, which is silence rather
+# than disagreement: there is nothing to compare rounds against.
+for my $tag (defined $modal ? @complete : ()) {
     for my $arm ('old', 'new') {
         my $g = grid_of("$dir/$tag-$arm.tsv.grid");
         push @odd, "$tag-$arm painted $g" if $g ne $modal && $g ne '?';
