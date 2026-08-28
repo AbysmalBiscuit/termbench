@@ -70,9 +70,10 @@ it, so that run has no equivalent line.
 
 ## Isolation
 
-`appdata/` becomes `%APPDATA%` (config, state, IPC) and `local/` becomes
-`%LOCALAPPDATA%` (where the log lands), so a run never touches the live
-alacritree. `ipc_socket` is off so a bench window cannot answer the CLI or MCP
+A run copies `appdata/` into `local/appdata/`, patches the arm there and hands
+that to the window as `%APPDATA%` (config, state, IPC), with `local/` itself as
+`%LOCALAPPDATA%` (where the log lands). So a run touches neither the live
+alacritree nor a tracked file. `ipc_socket` is off so a bench window cannot answer the CLI or MCP
 bridge the live window owns; `vsync` is off because a frame cap would hide the
 microseconds being measured.
 

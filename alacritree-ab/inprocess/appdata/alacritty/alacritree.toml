@@ -31,4 +31,4 @@ args = [
 
 [debug]
 gpu_timing = true
-gpu_ab = "backgrounds"
+gpu_ab = "decorations"

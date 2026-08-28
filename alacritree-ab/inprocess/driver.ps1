@@ -16,18 +16,20 @@ foreach ($dep in @('conpty.dll', 'OpenConsole.exe')) {
   }
 }
 
-$env:APPDATA = Join-Path $here 'appdata'
-$env:LOCALAPPDATA = Join-Path $here 'local'
-$env:ALACRITREE_AB_MODE = $Mode
+Remove-Item -Recurse -Force (Join-Path $here 'local') -ErrorAction SilentlyContinue
 
-# One config serves both experiments, and the arm it flips is the only thing
-# that differs between them, so the driver sets it rather than the caller
-# editing a file it would then have to remember to put back.
-$config = Join-Path $here 'appdata/alacritty/alacritree.toml'
+# The run gets a throwaway copy of the tracked config, because the arm is the
+# only thing that differs between the two experiments and writing it into the
+# tracked file would leave every measurement holding a dirty working tree.
+$run = New-Item -ItemType Directory -Force -Path (Join-Path $here 'local/appdata')
+Copy-Item -Recurse -Force (Join-Path $here 'appdata/*') $run
+$config = Join-Path $run 'alacritty/alacritree.toml'
 $patched = (Get-Content -LiteralPath $config -Raw) -replace 'gpu_ab = "[a-z]+"', ('gpu_ab = "' + $Ab + '"')
 Set-Content -LiteralPath $config -Value $patched -NoNewline
 
-Remove-Item -Recurse -Force (Join-Path $here 'local/alacritree') -ErrorAction SilentlyContinue
+$env:APPDATA = $run.FullName
+$env:LOCALAPPDATA = Join-Path $here 'local'
+$env:ALACRITREE_AB_MODE = $Mode
 $p = Start-Process -FilePath $exe -PassThru
 Write-Host "$Ab/$Mode : pid $($p.Id), running ${Seconds}s"
 Start-Sleep -Seconds $Seconds
