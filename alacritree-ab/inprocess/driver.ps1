@@ -3,9 +3,13 @@
 # prints the gpu grid report lines.
 param(
   [Parameter(Mandatory = $true)][string]$Binary,
-  [ValidateSet('decorations', 'backgrounds', 'glyphs')][string]$Ab = 'decorations',
+  [ValidateSet('decorations', 'backgrounds', 'glyphs', 'fill', 'blend')][string]$Ab = 'decorations',
   [ValidateSet('plain', 'percell', 'percellbg', 'underline', 'static')][string]$Mode = 'plain',
-  [int]$Seconds = 300
+  [int]$Seconds = 300,
+  # Terminal font size in points. A fixed window holds pixels constant, so
+  # raising this cuts the cell count as 1/size^2 while each glyph's ink grows
+  # as size^2 -- an instance-count knob at roughly constant covered area.
+  [double]$FontSize = 0
 )
 
 $here = $PSScriptRoot
@@ -27,11 +31,17 @@ $config = Join-Path $run 'alacritty/alacritree.toml'
 $patched = (Get-Content -LiteralPath $config -Raw) -replace 'gpu_ab = "[a-z]+"', ('gpu_ab = "' + $Ab + '"')
 Set-Content -LiteralPath $config -Value $patched -NoNewline
 
+if ($FontSize -gt 0) {
+  $shared = Join-Path $run 'alacritty/alacritty.toml'
+  $sized = (Get-Content -LiteralPath $shared -Raw) -replace '(?m)^size = [\d.]+$', ('size = ' + $FontSize)
+  Set-Content -LiteralPath $shared -Value $sized -NoNewline
+}
+
 $env:APPDATA = $run.FullName
 $env:LOCALAPPDATA = Join-Path $here 'local'
 $env:ALACRITREE_AB_MODE = $Mode
 $p = Start-Process -FilePath $exe -PassThru
-Write-Host "$Ab/$Mode : pid $($p.Id), running ${Seconds}s"
+Write-Host "$Ab/$Mode$(if ($FontSize -gt 0) { "/${FontSize}pt" }) : pid $($p.Id), running ${Seconds}s"
 Start-Sleep -Seconds $Seconds
 if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
 $p.WaitForExit(5000) | Out-Null
@@ -40,4 +50,4 @@ Start-Sleep -Milliseconds 500
 $grid = Get-Content -LiteralPath "$here/out/$Mode.grid" -ErrorAction SilentlyContinue
 Write-Host "grid $grid"
 Get-ChildItem -Path (Join-Path $here 'local/alacritree') -Filter '*.log' -ErrorAction SilentlyContinue |
-  ForEach-Object { Select-String -Path $_.FullName -Pattern 'gpu grid' | ForEach-Object { $_.Line } }
+  ForEach-Object { Select-String -Path $_.FullName -Pattern 'gpu grid|grid gl:' | ForEach-Object { $_.Line } }

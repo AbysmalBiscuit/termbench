@@ -13,18 +13,19 @@ use warnings;
 
 my (@g, @a, $what);
 while (<>) {
-    next unless /gpu grid \[(deco|bg|glyph) (gated|always)\], (\d+) frames: submit ([\d.]+)us/;
+    next unless /gpu grid \[(deco|bg|glyph|fill|blend) (gated|always)\], (\d+) frames: submit ([\d.]+)us/;
     my ($subject, $arm, $frames) = ($1, $2, $3);
     $what //= $subject;
     my ($skipped) = /skipped (\d+)\//;
     my ($total)   = /total ([\d.]+)us/;
     my ($whole)   = /frame ([\d.]+)us/;
+    my ($clear)   = /clear ([\d.]+)us/;
     my ($bg)      = /backgrounds ([\d.]+)us/;
     my ($gl)      = /glyphs ([\d.]+)us/;
     my ($deco)    = /decorations ([\d.]+)us/;
     next unless defined $total;
     my $r = { frames => $frames, skipped => $skipped // 0, total => $total,
-              whole => $whole, bg => $bg, gl => $gl, deco => $deco };
+              whole => $whole, clear => $clear, bg => $bg, gl => $gl, deco => $deco };
     $arm eq 'gated' ? push @g, $r : push @a, $r;
 }
 
@@ -84,11 +85,15 @@ my %control = (
     deco  => ['backgrounds + glyphs', sub { ($_[0]{bg} // 0) + ($_[0]{gl} // 0) }],
     bg    => ['glyphs + decorations', sub { ($_[0]{gl} // 0) + ($_[0]{deco} // 0) }],
     glyph => ['backgrounds + decorations', sub { ($_[0]{bg} // 0) + ($_[0]{deco} // 0) }],
+    fill  => ['backgrounds + decorations', sub { ($_[0]{bg} // 0) + ($_[0]{deco} // 0) }],
+    blend => ['glyphs + decorations', sub { ($_[0]{gl} // 0) + ($_[0]{deco} // 0) }],
 );
 my %subject = (
     deco  => 'the decoration pass',
     bg    => 'the background quad',
     glyph => 'the glyph coverage read',
+    fill  => 'the discard of blank coverage',
+    blend => 'blending across the background pass',
 );
 my ($control_label, $control_pick) = @{ $control{$what} };
 
@@ -97,6 +102,7 @@ printf "%-32s %9s %9s %8s %7s\n", 'measurement', 'gated', 'always', 'ratio', 'p'
 row('total GPU per frame', sub { $_[0]{total} });
 row('whole callback', sub { $_[0]{whole} }, '<- measured, not summed');
 row($control_label, $control_pick, '<- null control, same work');
+row('clear', sub { $_[0]{clear} });
 row('backgrounds', sub { $_[0]{bg} });
 row('glyphs', sub { $_[0]{gl} });
 row('decorations', sub { $_[0]{deco} });
@@ -105,9 +111,9 @@ my @saved = map { $a[$_]{total} - $g[$_]{total} } 0 .. $n - 1;
 printf "\nsaved per frame (median):  %.0fus\n", median(@saved);
 
 # `total` adds the stages up; `whole` is one bracket around the callback,
-# measured on the frames between them.  The gap is the clear, which sits in no
-# stage, plus whatever a bracket charges its stage beyond the work inside it --
-# so it is the ceiling on how much of any stage median is real.
+# measured on the frames between them.  A build that times the clear leaves only
+# the binds between stages in the gap, so what remains is the bracket tax: a
+# negative figure is a stage sum inflated past the frame it came from.
 my @floor = map { $g[$_]{whole} - $g[$_]{total} }
             grep { defined $g[$_]{whole} } 0 .. $n - 1;
 printf "whole callback minus stage sum (median):  %.0fus\n", median(@floor) if @floor;
