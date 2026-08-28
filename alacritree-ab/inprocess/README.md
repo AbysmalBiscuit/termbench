@@ -45,6 +45,7 @@ dropping something someone asked to see.
 | --- | --- | --- |
 | `decorations` | `plain` | `underline` |
 | `backgrounds` | `plain` | `percellbg` |
+| `glyphs` | `plain` | (nothing: the arms differ everywhere text is drawn) |
 
 ## Reading the report
 
@@ -79,3 +80,24 @@ microseconds being measured.
 
 `out/` and `local/` are ignored. `measurements/` holds the captured report
 lines and the findings they produced, named for the experiment that made them.
+
+## Checking that output did not move
+
+A pass that draws differently can be faster for the wrong reason, so a shader
+change is verified against pixels before its numbers are believed:
+
+```sh
+./shot.ps1 -Binary path/to/old.exe -Mode static -Out before.png
+./shot.ps1 -Binary path/to/new.exe -Mode static -Out after.png
+./pixdiff.ps1 -A before.png -B after.png
+```
+
+`-Mode static` paints one fixed screen and holds it. `shot.ps1` captures the
+window's own composited surface through `PrintWindow`, never the desktop:
+reading the screen picks up whatever overlaps the window and needs it raised
+and positioned, which means fighting whoever is using the machine over the
+monitor it happens to open on.
+
+Two captures of the same binary come out identical to the byte, so any
+difference the diff reports is the change and not the method. Check that first
+when a result surprises you.

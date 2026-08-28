@@ -13,7 +13,7 @@ use warnings;
 
 my (@g, @a, $what);
 while (<>) {
-    next unless /gpu grid \[(deco|bg) (gated|always)\], (\d+) frames: submit ([\d.]+)us/;
+    next unless /gpu grid \[(deco|bg|glyph) (gated|always)\], (\d+) frames: submit ([\d.]+)us/;
     my ($subject, $arm, $frames) = ($1, $2, $3);
     $what //= $subject;
     my ($skipped) = /skipped (\d+)\//;
@@ -80,16 +80,23 @@ $what //= 'deco';
 # The control is every stage the experiment leaves alone.  Summing the stage
 # under test into it would put the effect inside its own baseline.
 my %control = (
-    deco => ['backgrounds + glyphs', sub { ($_[0]{bg} // 0) + ($_[0]{gl} // 0) }],
-    bg   => ['glyphs + decorations', sub { ($_[0]{gl} // 0) + ($_[0]{deco} // 0) }],
+    deco  => ['backgrounds + glyphs', sub { ($_[0]{bg} // 0) + ($_[0]{gl} // 0) }],
+    bg    => ['glyphs + decorations', sub { ($_[0]{gl} // 0) + ($_[0]{deco} // 0) }],
+    glyph => ['backgrounds + decorations', sub { ($_[0]{bg} // 0) + ($_[0]{deco} // 0) }],
+);
+my %subject = (
+    deco  => 'the decoration pass',
+    bg    => 'the background quad',
+    glyph => 'the glyph coverage read',
 );
 my ($control_label, $control_pick) = @{ $control{$what} };
 
-printf "%d pairs, flipping %s\n\n", $n, $what eq 'bg' ? 'the background quad' : 'the decoration pass';
+printf "%d pairs, flipping %s\n\n", $n, $subject{$what};
 printf "%-32s %9s %9s %8s %7s\n", 'measurement', 'gated', 'always', 'ratio', 'p';
 row('total GPU per frame', sub { $_[0]{total} });
 row($control_label, $control_pick, '<- null control, same work');
 row('backgrounds', sub { $_[0]{bg} });
+row('glyphs', sub { $_[0]{gl} });
 row('decorations', sub { $_[0]{deco} });
 
 my @saved = map { $a[$_]{total} - $g[$_]{total} } 0 .. $n - 1;

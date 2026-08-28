@@ -18,6 +18,14 @@ $rows = 24
 try { $cols = [Console]::WindowWidth; $rows = [Console]::WindowHeight } catch { }
 Set-Content -LiteralPath "$here/out/$mode.grid" -Value "${cols}x${rows}"
 
+# `static` is not a measurement: it paints one fixed screen and holds it, so
+# two builds can be captured and their pixels compared.
+if ($mode -eq 'static') {
+  $text = -join (32..126 | ForEach-Object { [char]$_ })
+  1..$rows | ForEach-Object { Write-Host ($text * 3).Substring(0, [Math]::Min($cols, 250)) }
+  while ($true) { Start-Sleep -Seconds 5 }
+}
+
 # Repeat until the driver kills the window: the report fires every 240 frames
 # and a useful comparison wants several windows per arm, which one sgrtest run
 # does not reliably reach.

@@ -3,8 +3,8 @@
 # prints the gpu grid report lines.
 param(
   [Parameter(Mandatory = $true)][string]$Binary,
-  [ValidateSet('decorations', 'backgrounds')][string]$Ab = 'decorations',
-  [ValidateSet('plain', 'percell', 'percellbg', 'underline')][string]$Mode = 'plain',
+  [ValidateSet('decorations', 'backgrounds', 'glyphs')][string]$Ab = 'decorations',
+  [ValidateSet('plain', 'percell', 'percellbg', 'underline', 'static')][string]$Mode = 'plain',
   [int]$Seconds = 300
 )
 
