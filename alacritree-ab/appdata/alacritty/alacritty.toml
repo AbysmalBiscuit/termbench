@@ -1,0 +1,42 @@
+[general]
+working_directory = "~"
+
+[window]
+dimensions = { columns = 80, lines = 24 }
+padding = { x = 5, y = 1 }
+decorations_theme_variant = "Dark"
+
+[font]
+normal = { family = "Sarasa Fixed K", style = "Regular" }
+size = 12
+
+[colors]
+draw_bold_text_with_bright_colors = true
+
+[colors.primary]
+foreground = "#e5e5e5"
+background = "#141F2E"
+
+[colors.search]
+matches = { foreground = "#e5e5e5", background = "#375780" }
+
+[colors.normal]
+red = "#990000"
+green = "#0DA335"
+yellow = "#999900"
+blue = "#4472CC"
+magenta = "#B200B2"
+cyan = "#00A6B2"
+white = "#BFBFBF"
+
+[colors.bright]
+red = "#E50000"
+green = "#11CF45"
+yellow = "#E5E500"
+blue = "#558EFF"
+magenta = "#E500E5"
+cyan = "#00E5E5"
+white = "#E5E5E5"
+
+[mouse]
+hide_when_typing = true

@@ -1,0 +1,59 @@
+# Bench config for the paired old/new termbench A/B. Mirrors the live config on
+# everything that touches the paint path, and differs only where a difference
+# would bias one arm:
+#   - gpu_timing off: the old binary has no such key, so leaving it on would
+#     charge the new binary for timer queries the old one never issues.
+#   - pr_status/upstream_status off: `gh` polling is background work during a
+#     measurement.
+#   - ipc_socket off: a bench window must never answer the CLI or the MCP
+#     bridge that the live window owns.
+[font]
+fallback = [
+  "MesloLGM Nerd Font Propo",
+  "Symbols Nerd Font Mono",
+  "Symbols Nerd Font",
+  "Atkinson Hyperlegible Mono",
+  "Noto Sans Mono CJK KR",
+  "Noto Sans Mono CJK SC",
+  "Noto Sans Mono CJK HK",
+  "Noto Sans Mono CJK JP",
+  "Noto Sans Mono CJK TC",
+  "Menlo",
+  "Monaco",
+  "Consolas",
+  "Twemoji Mozilla",
+  "Noto Color Emoji",
+  "Apple Color Emoji",
+  "Segoe UI Emoji",
+  "Segoe UI Symbol",
+  "Font Awesome 6 Pro",
+  "Noto Emoji",
+  "Segoe UI Historic",
+  "Noto Sans Bamum",
+]
+
+[ui]
+pr_status = false
+upstream_status = false
+vsync = false
+gpu_grid = true
+
+[ui.font]
+size = 10.6
+
+[general]
+ipc_socket = false
+
+[terminal.shell]
+program = "powershell.exe"
+args = [
+  "-NoProfile",
+  "-NoLogo",
+  "-ExecutionPolicy",
+  "Bypass",
+  "-File",
+  "C:/Users/Lev/Git/github/benchmark_terminals/termbench/alacritree-ab/round.ps1",
+]
+
+[debug]
+gpu_timing = false
