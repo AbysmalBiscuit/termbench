@@ -18,12 +18,13 @@ while (<>) {
     $what //= $subject;
     my ($skipped) = /skipped (\d+)\//;
     my ($total)   = /total ([\d.]+)us/;
+    my ($whole)   = /frame ([\d.]+)us/;
     my ($bg)      = /backgrounds ([\d.]+)us/;
     my ($gl)      = /glyphs ([\d.]+)us/;
     my ($deco)    = /decorations ([\d.]+)us/;
     next unless defined $total;
     my $r = { frames => $frames, skipped => $skipped // 0, total => $total,
-              bg => $bg, gl => $gl, deco => $deco };
+              whole => $whole, bg => $bg, gl => $gl, deco => $deco };
     $arm eq 'gated' ? push @g, $r : push @a, $r;
 }
 
@@ -94,6 +95,7 @@ my ($control_label, $control_pick) = @{ $control{$what} };
 printf "%d pairs, flipping %s\n\n", $n, $subject{$what};
 printf "%-32s %9s %9s %8s %7s\n", 'measurement', 'gated', 'always', 'ratio', 'p';
 row('total GPU per frame', sub { $_[0]{total} });
+row('whole callback', sub { $_[0]{whole} }, '<- measured, not summed');
 row($control_label, $control_pick, '<- null control, same work');
 row('backgrounds', sub { $_[0]{bg} });
 row('glyphs', sub { $_[0]{gl} });
@@ -101,6 +103,14 @@ row('decorations', sub { $_[0]{deco} });
 
 my @saved = map { $a[$_]{total} - $g[$_]{total} } 0 .. $n - 1;
 printf "\nsaved per frame (median):  %.0fus\n", median(@saved);
+
+# `total` adds the stages up; `whole` is one bracket around the callback,
+# measured on the frames between them.  The gap is the clear, which sits in no
+# stage, plus whatever a bracket charges its stage beyond the work inside it --
+# so it is the ceiling on how much of any stage median is real.
+my @floor = map { $g[$_]{whole} - $g[$_]{total} }
+            grep { defined $g[$_]{whole} } 0 .. $n - 1;
+printf "whole callback minus stage sum (median):  %.0fus\n", median(@floor) if @floor;
 
 # Only the decoration experiment can drop its whole draw; the background
 # collapse happens in the vertex shader, where no counter on this side sees it.
