@@ -1,0 +1,34 @@
+# Config for the in-process decoration-gate A/B. The gate is compared against
+# itself inside one window, so nothing here has to be fair between two
+# binaries -- only steady across the run.
+#
+#   gpu_timing   the report line is the whole instrument
+#   gpu_deco_ab  flips the gate every report window and names the arm
+#   vsync off    a frame cap would hide a few microseconds of GPU time
+#   ipc_socket   off, so this window never answers the live instance's CLI
+[ui]
+pr_status = false
+upstream_status = false
+vsync = false
+gpu_grid = true
+
+[ui.font]
+size = 10.6
+
+[general]
+ipc_socket = false
+
+[terminal.shell]
+program = "powershell.exe"
+args = [
+  "-NoProfile",
+  "-NoLogo",
+  "-ExecutionPolicy",
+  "Bypass",
+  "-File",
+  "C:/Users/Lev/Git/github/benchmark_terminals/termbench/alacritree-ab/inprocess/round.ps1",
+]
+
+[debug]
+gpu_timing = true
+gpu_deco_ab = true

@@ -16,6 +16,12 @@ Read the per-pair ratios, not just the median. When every measurement in a pair
 moves the same direction at once, that pair met a busy machine: no code change
 moves plain text, scrolling, per-cell colour and underlines together.
 
+## The other harness
+
+`inprocess/` compares one build against itself by flipping a renderer option
+between report windows. Reach for it when the effect is a few microseconds of
+GPU time, which the round-to-round spread here swamps.
+
 ## Running
 
 ```sh
