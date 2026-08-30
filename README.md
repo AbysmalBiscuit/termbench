@@ -1,35 +1,80 @@
-# TermBench V2
+# termbench and friends
 
-This is a simple benchmark you can use to see how your terminal sinks large outputs.  While it cannot time how long it takes your terminal to render (since it has no idea), it _can_ time how long it takes your terminal to accept the data, which is what termbench measures.  For a full benchmark, you would need to also time how long your renderer takes to complete rendering after the sink finishes.
+A fork of [cmuratori/termbench](https://github.com/cmuratori/termbench) carrying
+two more instruments and the harnesses that run all of them against a terminal
+under development.
 
-# Usage
+Upstream answers one question: how fast does a terminal accept bytes? That
+number confounds several things a renderer does separately, so the instruments
+here hold one of them fixed at a time.
 
-On slow terminals, you will want to run termbench like this:
+## The instruments
 
+The sources are in `instruments/`. Every build writes its binaries to the repo
+root, because that is where the harnesses load them from by name.
+
+| source | question it answers |
+| --- | --- |
+| `termbench.cpp` | how fast does a terminal sink bytes? Upstream's benchmark, plus a result file. |
+| `sgrtest.cpp` | does it stall on the bytes, or on the attribute changes inside them? Paints the same grid the same number of times in every mode and varies only SGR density. |
+| `scrolltest.cpp` | does it stall because it is scrolling, or because it is moving bytes? Pushes an identical byte count through payloads that differ in one respect at a time. |
+
+Each source opens with the reasoning behind its modes and what its pairs
+isolate. Read that before reading its numbers.
+
+All three write results to a file rather than stdout, because stdout is
+attached to the terminal being measured. `sgrtest` and `scrolltest` take the
+path positionally; `termbench` takes `-out`. Run either of the new two with no
+arguments for its usage.
+
+`fast_pipe.h` is upstream's named-pipe bypass for the Windows conio subsystem.
+
+## Building
+
+```sh
+devrun task build    # everything, from any shell
 ```
-termbench_release_clang small
+
+`devrun task` lists the rest. The tasks wrap the scripts below, which still work
+on their own from a developer prompt:
+
+```sh
+./build.bat    # Windows, MSVC and clang
+./build.sh     # anything else, clang
 ```
 
-This will run very small data sizes (~1 megabyte) so that the terminal has a prayer of completing the benchmark in a reasonable amount of time.  This is the recommended setting for things like cmd.exe or Windows Terminal.
+Building only `termbench.cpp` leaves a harness round unable to start. The burner
+is a separate crate and only `devrun task build` picks it up along with the
+rest; `cd burners && cargo build --release` is the direct form.
 
-For terminals that have reasonable performance, you run it like this:
+## Running termbench
 
-```
-termbench_release_clang
-```
-
-for the regular benchmark sizes, or like this
-
-```
-termbench_release_clang large
+```sh
+termbench_release_clang small    # ~1 MB payloads, for cmd.exe or Windows Terminal
+termbench_release_clang          # the regular sizes
+termbench_release_clang large    # more of a stress test
 ```
 
-for larger benchmark sizes (if you want more of a stress test than normal).
+Upstream's guidance: on a Windows machine with memory bandwidth in the 10-20
+GB/s range, a reasonable terminal lands in the 0.5-2.0 GB/s range. Well above
+suggests a well-optimized terminal, well below a poorly written one. Throughput
+depends heavily on hardware and on the operating system's pipe behaviour, so
+treat those as rough. Upstream has not tested termbench on Linux and gives no
+expected numbers there.
 
-# Expected Results
+## The harnesses
 
-On modern Windows machines with memory bandwidth in the 10-20gb/s range, the expected throughput for these tests would be in the 0.5-2.0gb/s range for a reasonable terminal.  Numbers significantly higher than that might indicate a well-optimized terminal, and numbers significantly lower than that might indicate a poorly written terminal.
+The instruments say what a terminal did. Comparing two builds needs more than
+running them twice, because on a laptop the round-to-round spread swamps most
+of what is worth chasing.
 
-Termbench has not yet been tested on Linux, so we do not have expected bandwidth numbers at this time.
+| directory | what it compares |
+| --- | --- |
+| `alacritree-ab/` | two alacritree builds, alternating arms so drift divides out. For effects worth several percent of a frame. |
+| `alacritree-ab/inprocess/` | one build against itself, flipping a renderer option between report windows. For a few microseconds of GPU time, which the paired harness cannot resolve. |
+| `burners/` | a describable CPU load, so a terminal can be measured while competing with a build instead of on an idle machine. |
 
-Obviously, throughput numbers depend greatly on the underlying hardware, and the operating system pipe behavior, so take these expected values with a grain of salt.
+Each has its own README covering why it is built that way, how to run it, and
+how to read what comes out. `alacritree-ab/inprocess/measurements/` holds
+captured reports and the findings they produced; each findings file names the
+command that regenerates it from the raw report committed beside it.
