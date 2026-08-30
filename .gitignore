@@ -1,3 +1,12 @@
 *.exe
 *.pdb
 *.log
+*.obj
+/obj/
+
+# build.sh writes these extensionless, next to build.bat's .exe of the same name.
+termbench_ab
+termbench_debug_clang
+termbench_release_clang
+sgrtest
+scrolltest_ab

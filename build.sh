@@ -1,20 +1,24 @@
 #!/bin/bash
-BaseFile=termbench.cpp
+set -u
 
-CLANG=$(which clang++)
-if [[ -x "${CLANG}" ]]
-then
-  CLLinkFlags="-Wformat"
-  CLCompileFlags="-O3 -Ofast"
-  CC="${CLANG}"
-  output=termbench_release_clang
-else
-	echo "ABORTING: no compiler detected"
+CC=$(which clang++)
+if [[ ! -x "${CC}" ]]; then
+  echo "ABORTING: no compiler detected"
+  exit 1
 fi
 
-if [[ -x "${CC}" ]]
-then
-  echo Building release: ./${output}
-  "${CC}" -O3 ${CLCompileFlags} ${CLLinkFlags} ${BaseFile} -o "${output}"
-  strip "${output}"
-fi
+CompileFlags="-O3 -Ofast"
+LinkFlags="-Wformat"
+
+# alacritree-ab/round.ps1 loads sgrtest and scrolltest_ab from the repo root by
+# name, so those output names are the interface and not a preference.
+build() {
+  local source=$1 output=$2
+  echo "Building release: ./${output}"
+  "${CC}" ${CompileFlags} ${LinkFlags} "${source}" -o "${output}" && strip "${output}"
+}
+
+build termbench.cpp  termbench_release_clang
+build termbench.cpp  termbench_ab
+build sgrtest.cpp    sgrtest
+build scrolltest.cpp scrolltest_ab
