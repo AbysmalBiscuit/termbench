@@ -28,18 +28,18 @@ set CLANGLinkFlags=-fuse-ld=lld -Wl,-subsystem:console,kernel32.lib,user32.lib
 
 echo -----------------
 echo Building termbench debug:
-call cl -Fetermbench_debug_msvc.exe -Foobj\termbench_debug_msvc.obj -Od %CLCompileFlags% termbench.cpp /link %CLLinkFlags% -PDB:obj\termbench_debug_msvc.pdb -RELEASE
-if "%HaveClang%"=="1" call clang++ %CLANGCompileFlags% %CLANGLinkFlags% termbench.cpp -o termbench_debug_clang.exe
+call cl -Fetermbench_debug_msvc.exe -Foobj\termbench_debug_msvc.obj -Od %CLCompileFlags% instruments\termbench.cpp /link %CLLinkFlags% -PDB:obj\termbench_debug_msvc.pdb -RELEASE
+if "%HaveClang%"=="1" call clang++ %CLANGCompileFlags% %CLANGLinkFlags% instruments/termbench.cpp -o termbench_debug_clang.exe
 
 echo -----------------
 echo Building termbench release:
-call cl -Fetermbench_release_msvc.exe -Foobj\termbench_release_msvc.obj %CLRelease% %CLCompileFlags% termbench.cpp /link %CLLinkFlags% -PDB:obj\termbench_release_msvc.pdb -RELEASE
-if "%HaveClang%"=="1" call clang++ -O3 %CLANGCompileFlags% %CLANGLinkFlags% termbench.cpp -o termbench_release_clang.exe
+call cl -Fetermbench_release_msvc.exe -Foobj\termbench_release_msvc.obj %CLRelease% %CLCompileFlags% instruments\termbench.cpp /link %CLLinkFlags% -PDB:obj\termbench_release_msvc.pdb -RELEASE
+if "%HaveClang%"=="1" call clang++ -O3 %CLANGCompileFlags% %CLANGLinkFlags% instruments/termbench.cpp -o termbench_release_clang.exe
 
 rem alacritree-ab/round.ps1 loads these three from the repo root by name, so the
 rem names here are the interface and not a preference.
 echo -----------------
 echo Building the instruments the harnesses load:
-call cl -Fetermbench_ab.exe -Foobj\termbench_ab.obj %CLRelease% %CLCompileFlags% termbench.cpp /link %CLLinkFlags% -PDB:obj\termbench_ab.pdb -RELEASE
-call cl -Fesgrtest.exe -Foobj\sgrtest.obj %CLRelease% %CLCompileFlags% sgrtest.cpp /link %CLLinkFlags% -PDB:obj\sgrtest.pdb -RELEASE
-call cl -Fescrolltest_ab.exe -Foobj\scrolltest_ab.obj %CLRelease% %CLCompileFlags% scrolltest.cpp /link %CLLinkFlags% -PDB:obj\scrolltest_ab.pdb -RELEASE
+call cl -Fetermbench_ab.exe -Foobj\termbench_ab.obj %CLRelease% %CLCompileFlags% instruments\termbench.cpp /link %CLLinkFlags% -PDB:obj\termbench_ab.pdb -RELEASE
+call cl -Fesgrtest.exe -Foobj\sgrtest.obj %CLRelease% %CLCompileFlags% instruments\sgrtest.cpp /link %CLLinkFlags% -PDB:obj\sgrtest.pdb -RELEASE
+call cl -Fescrolltest_ab.exe -Foobj\scrolltest_ab.obj %CLRelease% %CLCompileFlags% instruments\scrolltest.cpp /link %CLLinkFlags% -PDB:obj\scrolltest_ab.pdb -RELEASE

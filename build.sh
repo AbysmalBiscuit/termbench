@@ -15,7 +15,7 @@ LinkFlags="-Wformat"
 build() {
   local source=$1 output=$2
   echo "Building release: ./${output}"
-  "${CC}" ${CompileFlags} ${LinkFlags} "${source}" -o "${output}" && strip "${output}"
+  "${CC}" ${CompileFlags} ${LinkFlags} "instruments/${source}" -o "${output}" && strip "${output}"
 }
 
 build termbench.cpp  termbench_release_clang
