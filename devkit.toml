@@ -1,0 +1,25 @@
+#:schema https://github.com/AbysmalBiscuit/devkit/releases/latest/download/devkit-config.json
+
+# Required for `[tasks]` to load. This repo runs no dev servers and has no issue
+# worktree flow, so only the shape of this section matters.
+[defaults]
+worktree_root = "../termbench-worktrees"
+branch_prefix = ""
+baseline_ref = "origin/main"
+baseline_path = "."
+
+[tasks.build]
+description = "Build everything: the C++ instruments and the burner."
+steps = [{ task = "build-instruments" }, { task = "build-burners" }]
+
+[tasks.build-instruments]
+description = "MSVC build of termbench, sgrtest and scrolltest into the repo root, where round.ps1 loads them by name."
+run = ["cmd", "/c", 'call .\build.bat']
+
+[tasks.build-burners]
+description = "Release build of the CPU load generator used for contention runs."
+run = ["cargo", "build", "--release", "--manifest-path", "burners/Cargo.toml"]
+
+[tasks.build-clang]
+description = "clang build of the same instruments. The POSIX path; aborts when clang++ is not on PATH."
+run = ["bash", "build.sh"]
